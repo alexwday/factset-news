@@ -186,16 +186,16 @@ class ComprehensiveNewsCollector:
             )
             logger.info(f"  {ticker}: {count} headlines")
         
-        # Strategy 2: Get ALL news and filter locally for mentions
-        logger.info("\n🏦 STRATEGY 2: Banking sector news (all)")
+        # Strategy 2: Try different sector values since "Banking" gives 400 error
+        logger.info("\n🏦 STRATEGY 2: Financial sector news")
         self._rate_limit()
         count = self._search_news(
-            sectors=["Banking"],
+            sectors=["Financial"],  # Changed from "Banking" which causes 400 error
             start_date=start_date,
             end_date=end_date,
-            description="Banking sector"
+            description="Financial sector"
         )
-        logger.info(f"  Banking sector: {count} headlines")
+        logger.info(f"  Financial sector: {count} headlines")
         
         # Strategy 3: Financial sector with Canada region
         logger.info("\n🇨🇦 STRATEGY 3: Canadian financial news")
@@ -285,7 +285,11 @@ class ComprehensiveNewsCollector:
             return new_count
             
         except Exception as e:
-            logger.error(f"{description}: Error - {str(e)[:100]}")
+            error_msg = str(e)
+            if "400" in error_msg:
+                logger.warning(f"{description}: Bad Request (400) - Invalid filter value")
+            else:
+                logger.error(f"{description}: Error - {error_msg[:100]}")
             return 0
     
     def _check_bank_mentions(self, news_item: Dict) -> List[str]:
@@ -431,22 +435,43 @@ def main():
                     summary_data = []
                     for ticker, name in collector.canadian_banks.items():
                         ticker_df = df[df['canadian_banks_mentioned'].apply(lambda x: ticker in x)]
+                        
+                        # Check if primarySymbols exists and handle properly
+                        primary_count = 0
+                        if 'primarySymbols' in df.columns:
+                            primary_rows = ticker_df[ticker_df['primarySymbols'].notna()]
+                            for _, row in primary_rows.iterrows():
+                                symbols = row['primarySymbols']
+                                if isinstance(symbols, list) and ticker in symbols:
+                                    primary_count += 1
+                        
                         summary_data.append({
                             'Ticker': ticker,
                             'Bank': name,
                             'Total News': len(ticker_df),
-                            'As Primary': len(ticker_df[ticker_df['primarySymbols'].apply(
-                                lambda x: ticker in x if isinstance(x, list) else False
-                            )])
+                            'As Primary': primary_count
                         })
                     
                     summary_df = pd.DataFrame(summary_data)
-                    summary_df.to_excel(writer, sheet_name='Summary', index=False)
+                    if not summary_df.empty:
+                        summary_df.to_excel(writer, sheet_name='Summary', index=False)
                     
-                    # Canadian banking news
+                    # Canadian banking news - only add if we have data
                     if not canadian_df.empty:
-                        canadian_df[['headlines', 'storyTime', 'canadian_banks_mentioned']].head(100).to_excel(
-                            writer, sheet_name='Top 100 News', index=False
+                        # Select columns that exist
+                        cols_to_export = []
+                        for col in ['headlines', 'storyTime', 'canadian_banks_mentioned']:
+                            if col in canadian_df.columns:
+                                cols_to_export.append(col)
+                        
+                        if cols_to_export:
+                            export_df = canadian_df[cols_to_export].head(100)
+                            export_df.to_excel(writer, sheet_name='Top 100 News', index=False)
+                    
+                    # If no sheets were added, add a default sheet
+                    if len(writer.sheets) == 0:
+                        pd.DataFrame({'Note': ['No Canadian banking news found']}).to_excel(
+                            writer, sheet_name='No Data', index=False
                         )
                 
                 logger.info(f"✅ Summary Excel saved to {excel_file}")
