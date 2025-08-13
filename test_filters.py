@@ -28,9 +28,24 @@ def test_filters():
         print("ERROR: Set API_USERNAME and API_PASSWORD in .env")
         return
     
+    # Setup proxy (required for your network)
+    proxy_url = None
+    if os.getenv("PROXY_USER") and os.getenv("PROXY_URL"):
+        from urllib.parse import quote
+        proxy_user = os.getenv("PROXY_USER")
+        proxy_password = os.getenv("PROXY_PASSWORD")
+        proxy_url_raw = os.getenv("PROXY_URL")
+        proxy_domain = os.getenv("PROXY_DOMAIN", "MAPLE")
+        
+        escaped_domain = quote(proxy_domain + "\\" + proxy_user)
+        quoted_password = quote(proxy_password)
+        proxy_url = f"http://{escaped_domain}:{quoted_password}@{proxy_url_raw}"
+        print("✓ Proxy configured")
+    
     configuration = fds.sdk.StreetAccountNews.Configuration(
         username=api_username,
-        password=api_password
+        password=api_password,
+        proxy=proxy_url  # Add proxy
     )
     
     # CRITICAL: Generate the auth token!
