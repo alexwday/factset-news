@@ -1,0 +1,14 @@
+# FactSet Street Account News SDK and dependencies
+fds.sdk.StreetAccountNews>=1.0.0
+fds.sdk.utils
+
+# Core dependencies matching the example
+python-dotenv
+pyyaml
+requests
+pandas
+openpyxl
+pysmb
+
+# Additional utilities
+python-dateutil

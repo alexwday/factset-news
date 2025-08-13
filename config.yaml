@@ -1,0 +1,58 @@
+# Street Account News Configuration
+# Configuration for FactSet Street Account News API
+# Last updated: 2025-08-13
+
+# SSL Certificate Configuration
+ssl_cert_path: "Finance Data and Analytics/DSA/Street Account News/Inputs/Certificate/rbc-ca-bundle.cer"
+
+# API Settings
+api_settings:
+  # NO FILTERING - Get ALL news related to Canadian banks
+  # Empty arrays mean no restrictions
+  categories: []  # Get all categories
+  topics: []      # Get all topics  
+  regions: []     # Get all regions
+  sectors: []     # Get all sectors
+  
+  # API request configuration
+  pagination_limit: 100
+  pagination_offset: 0
+  
+  # Date range settings (days to look back)
+  lookback_days: 30
+  
+  # Rate limiting and retry settings
+  request_delay: 2.0
+  max_retries: 5
+  retry_delay: 5.0
+  use_exponential_backoff: true
+  max_backoff_delay: 60.0
+
+# Street Account News specific settings
+street_account_news:
+  description: "Real-time news monitoring for Canadian banks"
+  output_data_path: "Finance Data and Analytics/DSA/Street Account News/Outputs/Data"
+  output_logs_path: "Finance Data and Analytics/DSA/Street Account News/Outputs/Logs"
+  
+  # Response attributes to request - using CORRECT field names from API
+  response_attributes:
+    - "headlines"      # The headline text
+    - "storyTime"      # When published
+    - "id"             # Story ID
+    - "primarySymbols" # Primary tickers
+    - "symbols"        # All tickers mentioned
+    - "subjects"       # Subjects/entities
+    - "storyBody"      # Story content
+    - "referenceUris"  # References
+    - "url"            # Story URL
+
+# Monitored Canadian Banks (from original config)
+monitored_institutions:
+  # Canadian Banks (7)
+  RY-CA: {name: "Royal Bank of Canada", type: "Canadian_Banks"}
+  BMO-CA: {name: "Bank of Montreal", type: "Canadian_Banks"}
+  CM-CA: {name: "Canadian Imperial Bank of Commerce", type: "Canadian_Banks"}
+  NA-CA: {name: "National Bank of Canada", type: "Canadian_Banks"}
+  BNS-CA: {name: "Bank of Nova Scotia", type: "Canadian_Banks"}
+  TD-CA: {name: "Toronto-Dominion Bank", type: "Canadian_Banks"}
+  LB-CA: {name: "Laurentian Bank", type: "Canadian_Banks"}
